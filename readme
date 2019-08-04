@@ -1,0 +1,17 @@
+
+
+./control.py -s 10.0.0.12 -p 12345 -f 27.145 -u 400 --sync-multiplier 3 --sync-repeats 4 --signal-repeats 40 --sleep-time=0.8
+
+Forward = 10
+Backward = 40
+Right = 64
+Left = 50
+
+Forward Right = 34
+Forward Left = 28
+Backward Right = 46
+Backward Left = 52
+
+sudo ./watch_simple.py -s 10.0.0.12 -p 12345 -f 27  --no-camera
+
+
