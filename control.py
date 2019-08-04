@@ -3,6 +3,7 @@
 import argparse
 import socket
 import sys
+import time
 
 from common import dead_frequency
 from common import format_command
@@ -48,7 +49,7 @@ def get_command_array(parser):
         int(args.microseconds),
         int(args.sync_multiplier),
         int(args.sync_repeats),
-        0,  # Signal repeats, to be read in and configured later
+        int(args.signal_repeats)
     ]
 
 
@@ -100,6 +101,21 @@ def make_parser():
         help='The number of times to repeat the synchronization bursts.'
     )
 
+    parser.add_argument(
+        '--signal-repeats',
+        dest='signal_repeats',
+        help='The number of times to repeat the signal bursts.', 
+        default=1
+    )
+    parser.add_argument(
+        '--sleep-time',
+        dest='sleep_time',
+        help='time to sleep', 
+        type=float, 
+        default=0.5
+    )
+
+
     return parser
 
 
@@ -120,6 +136,17 @@ def send_signal_repeats(host, port, command_array):
             command = bytes(command, 'utf-8')
         sock.sendto(command, (host, port))
 
+def send_signal_repeats_full(host, port, command_array):
+    """Reads signal repeat bursts and sends commands to the Raspberry Pi."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # pylint: disable=star-args
+    command = format_command(*command_array)
+    if sys.version_info.major == 3:
+        command = bytes(command, 'utf-8')
+
+    sock.sendto(command, (host, port))
+
 
 def main():
     """Parses command line arguments and runs the simple controller."""
@@ -131,14 +158,17 @@ def main():
     else:
         frequency = 49.830
 
-    if not server_up(args.server, args.port, frequency):
-        print('Server does not appear to be listening for messages, aborting')
-        return
+    #if not server_up(args.server, args.port, frequency):
+    #    print('Server does not appear to be listening for messages, aborting')
+    #    return
 
     command_array = get_command_array(parser)
 
     print('Sending commands to ' + args.server + ':' + str(args.port))
-    send_signal_repeats(args.server, args.port, command_array)
+    send_signal_repeats_full(args.server, args.port, command_array)
+    command_array[4] = 1
+    time.sleep( args.sleep_time )
+    send_signal_repeats_full(args.server, args.port, command_array)
 
 
 if __name__ == '__main__':
